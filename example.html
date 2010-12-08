@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Examples of usage - jQuery SPARQL</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script src="urlEncode.js"></script>
+    <script src="jquery.sparql.js"></script>
+    <script>
+      var cbfunc = function(results) {
+        $("#results").val(JSON.stringify(results));
+      };
+
+      $(document).ready(function() {
+        $("#run_school_list").click(function(e) {
+          $.sparql("http://gov.tso.co.uk/education/sparql")
+            .prefix("sch-ont","http://education.data.gov.uk/def/school/")
+            .select(["?name"])
+              .where("?school","a","sch-ont:School")
+                .where("sch-ont:establishmentName", "?name")
+                .where("sch-ont:districtAdministrative", "<http://statistics.data.gov.uk/id/local-authority-district/00HB>")
+            .orderby("?name")
+            .limit(10)
+            .execute(cbfunc);
+          return false;
+        });
+
+        $("#run_school_and_address_list").click(function(e) {
+          $.sparql("http://gov.tso.co.uk/education/sparql")
+             .prefix("sch-ont", "http://education.data.gov.uk/def/school/")
+             .select(["?name", "?address1", "?address2", "?postcode", "?town"])
+             .where("?school", "a", "sch-ont:School")
+               .where("sch-ont:establishmentName", "?name")
+               .where("sch-ont:districtAdministrative", "<http://statistics.data.gov.uk/id/local-authority-district/00HB>")
+               .optional()
+                 .where("?school", "sch-ont:address", "?address")
+                 .where("?address", "sch-ont:address1", "?address1")
+                   .where("sch-ont:address2", "?address2")
+                   .where("sch-ont:postcode", "?postcode")
+                   .where("sch-ont:town", "?town")
+               .end()
+             .orderby("?name")
+             .execute(cbfunc);
+            return false;
+          });
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Examples of usage</h1>
+    <p>
+      These examples are drawn from the <a href="http://www.data.gov.uk">Data.gov.uk</a> education
+      dataset. They were first described in <a href="http://data.gov.uk/blog/using-sparql-our-education-datasets">a blog post</a>
+      which was chosen for the sake of familiarity and comparison.
+    </p>
+    <p>
+      Each query is shown in standard SPARQL syntax and as expressed in this DSL. The queries may be run by
+      clicking the "Run Me" link below the two blocks. The results are then shown in the text area.
+    </p>
+
+    <h2>Results</h2>
+    <textarea id="results">
+      Results will appear here.
+    </textarea>
+
+    <h2>First 10 schools in the Bristol area ordered by name</h2>
+    <h3>Original SPARQL</h3>
+    <blockquote>
+      <pre><code>PREFIX sch-ont: &lt;http://education.data.gov.uk/def/school/&gt;
+SELECT ?name WHERE {
+	?school a sch-ont:School;
+    sch-ont:establishmentName ?name;
+    sch-ont:districtAdministrative	&lt;http://statistics.data.gov.uk/id/local-authority-district/00HB&gt;;
+}
+ORDER BY ?name
+LIMIT 10</code></pre>
+    </blockquote>
+    <h3>Javascript</h3>
+    <blockquote>
+      <pre><code>$.sparql("http://gov.tso.co.uk/education/sparql")
+  .prefix("sch-ont","http://education.data.gov.uk/def/school/")
+  .select(["?name"])
+    .where("?school","a","sch-ont:School")
+      .where("sch-ont:establishmentName", "?name")
+      .where("sch-ont:districtAdministrative", "&lt;http://statistics.data.gov.uk/id/local-authority-district/00HB&gt;")
+  .orderby("?name")
+  .limit(10)
+  .execute(cbfunc);</code></pre>
+    </blockquote>
+    <p><a id="run_school_list" href="#">Run Me</a></p>
+
+    <h2>Schools in the Bristol area (with addresses) ordered by name</h2>
+    <h3>Original SPARQL</h3>
+    <blockquote>
+      <pre><code>PREFIX sch-ont: &lt;http://education.data.gov.uk/def/school/&gt;
+SELECT ?name ?address1 ?address2 ?postcode ?town WHERE {
+  ?school a sch-ont:School;
+    sch-ont:establishmentName ?name;
+    sch-ont:districtAdministrative &lt;http://statistics.data.gov.uk/id/local-authority-district/00HB&gt;; .
+  OPTIONAL {
+    ?school sch-ont:address ?address .
+  
+    ?address sch-ont:address1 ?address1;
+      sch-ont:address2 ?address2 ;
+      sch-ont:postcode ?postcode ;
+      sch-ont:town ?town .
+  }
+}
+ORDER BY ?name</code></pre>
+    </blockquote>
+    <h3>Javascript</h3>
+    <blockquote>
+      <pre><code>$.sparql("http://gov.tso.co.uk/education/sparql")
+ .prefix("sch-ont", "http://education.data.gov.uk/def/school/")
+ .select(["?name", "?address1", "?address2", "?postcode", "?town"])
+ .where("?school", "a", "sch-ont:School")
+   .where("sch-ont:establishmentName", "?name")
+   .where("sch-ont:districtAdministrative", "&lt;http://statistics.data.gov.uk/id/local-authority-district/00HB&gt;")
+   .optional()
+     .where("?school", "sch-ont:address", "?address")
+     .where("?address", "sch-ont:address1", "?address1")
+       .where("sch-ont:address2", "?address2")
+       .where("sch-ont:postcode", "?postcode")
+       .where("sch-ont:town", "?town")
+   .end()
+ .orderby("?name")
+ .execute(cbfunc);</code></pre>
+    </blockquote>
+    <p><a id="run_school_and_address_list" href="#">Run Me</a></p>
+  </body>
+</html>
